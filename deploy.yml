@@ -1,5 +1,14 @@
-- hosts: webservers
+---
+- name: Deploy Weather-site to Apache
+  hosts: webservers
   become: yes
+
+  vars:
+    repo_branch: main
+    repo_url: "https://github.com/Krish-venom/Weather-site.git"
+    app_dir: /opt/weather-site
+    apache_root: /var/www/html
+
   tasks:
     - name: Ensure Apache is installed
       apt:
@@ -7,22 +16,29 @@
         state: present
         update_cache: yes
 
+    - name: Ensure git is installed
+      apt:
+        name: git
+        state: present
+        update_cache: yes
+
+    - name: Clone or update Weather-site repo
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: "{{ repo_branch }}"
+        force: yes
+
     - name: Copy website files to Apache document root
       copy:
-        src: ./index.html
-        dest: /var/www/html/index.html
+        src: "{{ app_dir }}/"
+        dest: "{{ apache_root }}/"
         owner: www-data
         group: www-data
         mode: '0644'
+      notify: Restart Apache
 
-    - name: Copy all static assets
-      copy:
-        src: ./static/
-        dest: /var/www/html/static/
-        owner: www-data
-        group: www-data
-        mode: '0755'
-
+  handlers:
     - name: Restart Apache
       service:
         name: apache2
