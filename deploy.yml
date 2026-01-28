@@ -1,35 +1,29 @@
----
-- name: Deploy static website to web server
-  hosts: webservers
+- hosts: webservers
   become: yes
- 
   tasks:
-    - name: Copy HTML/CSS/JS files
-      ansible.builtin.copy:
-        src: "{{ item }}"
-        dest: /var/www/html/
+    - name: Ensure Apache is installed
+      apt:
+        name: apache2
+        state: present
+        update_cache: yes
+
+    - name: Copy website files to Apache document root
+      copy:
+        src: ./index.html
+        dest: /var/www/html/index.html
         owner: www-data
         group: www-data
         mode: '0644'
-      with_fileglob:
-        - "*.html"
-        - "*.css"
-        - "*.js"
- 
-    - name: Copy images
-      ansible.builtin.copy:
-        src: "{{ item }}"
-        dest: /var/www/html/
+
+    - name: Copy all static assets
+      copy:
+        src: ./static/
+        dest: /var/www/html/static/
         owner: www-data
         group: www-data
-        mode: '0644'
-      with_fileglob:
-        - "*.png"
-        - "*.jpg"
-        - "*.jpeg"
-        - "*.gif"
- 
+        mode: '0755'
+
     - name: Restart Apache
-      ansible.builtin.service:
+      service:
         name: apache2
         state: restarted
