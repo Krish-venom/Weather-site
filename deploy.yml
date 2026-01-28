@@ -6,7 +6,6 @@
   vars:
     repo_branch: main
     repo_url: "https://github.com/Krish-venom/Weather-site.git"
-    app_dir: /opt/weather-site
     apache_root: /var/www/html
 
   tasks:
@@ -16,34 +15,39 @@
         state: present
         update_cache: yes
 
-    - name: Ensure git is installed
+    - name: Ensure Git is installed
       apt:
         name: git
         state: present
         update_cache: yes
 
-    - name: Clone or update Weather-site repo
+    - name: Remove default Apache content
+      file:
+        path: "{{ apache_root }}"
+        state: absent
+
+    - name: Recreate Apache document root
+      file:
+        path: "{{ apache_root }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Clone Weather-site repo into Apache root
       git:
         repo: "{{ repo_url }}"
-        dest: "{{ app_dir }}"
+        dest: "{{ apache_root }}"
         version: "{{ repo_branch }}"
         force: yes
 
-    - name: Remove default Apache index.html
+    - name: Set ownership and permissions for site files
       file:
-        path: "{{ apache_root }}/index.html"
-        state: absent
-
-    - name: Copy website files to Apache document root
-      copy:
-        src: "{{ app_dir }}/"
-        dest: "{{ apache_root }}/"
+        path: "{{ apache_root }}"
         owner: www-data
         group: www-data
-        mode: '0644'
-      notify: Restart Apache
+        recurse: yes
 
-  handlers:
     - name: Restart Apache
       service:
         name: apache2
