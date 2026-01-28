@@ -29,6 +29,11 @@
         version: "{{ repo_branch }}"
         force: yes
 
+    - name: Remove default Apache index.html
+      file:
+        path: "{{ apache_root }}/index.html"
+        state: absent
+
     - name: Copy website files to Apache document root
       copy:
         src: "{{ app_dir }}/"
